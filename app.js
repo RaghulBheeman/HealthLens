@@ -5,10 +5,11 @@
  const patients = require("./routes/patients")
  const upload = require("./routes/upload")
  const session = require('express-session');
- 
+ const cors = require('cors');
+
+ const app = express();
 
  
- const app = express();
 
 
  app.use(session({
@@ -16,6 +17,11 @@
     resave: false,
     saveUninitialized: false
 }));
+
+app.use(cors({
+   origin: 'http://localhost:3000', // Allow requests from this origin
+   credentials: true // Allow credentials (cookies, authorization headers, etc.)
+ }));
 
 
  mongoose.connect('mongodb://127.0.0.1/HealthLens')

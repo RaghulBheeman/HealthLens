@@ -1,14 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const app = express()
 const mongoose = require('mongoose');
 const Joi = require('joi');
 const cors = require('cors');
 
-router.use(cors())
+router.use(cors({
+  origin: 'http://localhost:3000', // Allow requests from this origin
+  credentials: true // Allow credentials (cookies, authorization headers, etc.)
+}));
 
-// const admins =[
-//     {id:1 ,userName:"AAA" ,email:"aaa@gmail.com", password:"AAAAAA", repeatPassword:"AAAAAA" }
-// ]
+//router.use(cors())
+
 
 const adminSchema = mongoose.Schema({
     userName:{type:String , required:true, minlength:3},
@@ -18,6 +21,22 @@ const adminSchema = mongoose.Schema({
 })
 
 const Admin = mongoose.model('Admin', adminSchema);
+
+
+// get admin details
+router.get('/admin/details', async (req, res) => {
+    try {
+        const adminId = req.session.adminId; // Retrieve admin ID from session
+        const admin = await Admin.findById(adminId);
+        if (!admin) {
+            return res.status(404).send("Admin not found");
+        }
+        res.status(200).json(admin);
+    } catch (error) {
+        console.error("Error fetching admin details:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
 
 //get admins
 router.get('/admin', async (req,res)=>{
@@ -43,7 +62,7 @@ router.post('/admin/register',async (req,res)=>{
     
 })
 
-//  login route
+// admin login
 router.post('/admin/login', async (req, res) => {
     const{error} = validateLoginData(req.body)
     if(error) res.status(400).send(error.details[0].message)
@@ -64,25 +83,6 @@ router.post('/admin/login', async (req, res) => {
     }
    
 });
-
-// Admin logout
-router.post('/admin/logout/:id', (req, res) => {
-    if (req.session && req.session.adminId && req.session.adminId === req.params.id) {
-        req.session.destroy((err) => {
-            if (err) {
-                console.error("Error destroying session:", err);
-                res.status(500).send("Internal Server Error");
-            } else {
-                res.status(200).send("Logout successful");
-            }
-        });
-    } else {
-        res.status(401).send("You are not authorized to log out");
-    }
-});
-
-
-
 
 // Update user
 router.put('/admin/update/:id', async (req, res) => {
@@ -114,6 +114,23 @@ router.delete('/admin/delete/:id', async (req, res) => {
     } catch (error) {
         console.error("Error deleting user:", error);
         res.status(500).send("Internal Server Error");
+    }
+});
+
+
+// Admin logout
+router.post('/admin/logout/:id', (req, res) => {
+    if (req.session && req.session.adminId && req.session.adminId === req.params.id) {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error("Error destroying session:", err);
+                res.status(500).send("Internal Server Error");
+            } else {
+                res.status(200).send("Logout successful");
+            }
+        });
+    } else {
+        res.status(401).send("You are not authorized to log out");
     }
 });
 
