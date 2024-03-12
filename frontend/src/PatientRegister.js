@@ -7,8 +7,9 @@ const PatientRegister = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');  
 
-  const handleSubmit = (e) => {
-    axios.post("http://localhost:3001/patient/register", {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await axios.post("http://localhost:3001/patient/register", {
         userName: username,
         email: email,
 

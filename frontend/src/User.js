@@ -1,13 +1,29 @@
-import React from 'react';
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom to create links
+import React, { useEffect, useState } from 'react';
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom'; // Import Link from react-router-dom to create links
 
 const User = () => {
   // Assuming user details are received as props
-  const userDetails = {
-    username: 'John Doe',
-    email: 'john@example.com'
-    // Add more details as needed
-  };
+  // const userDetails = {
+  //   username: 'John Doe',
+  //   email: 'john@example.com'
+  //   // Add more details as needed
+  // };
+
+  const [name , setName] = useState('')
+  const navigate = useNavigate()
+  axios.defaults.withCredentials = true;
+  useEffect(()=> {
+    axios.get('http://localhost:3001/user')
+    .then( res => {
+      if(res.data.valid){
+        setName(res.data.userName);
+      }else{
+        //navigate('/user/login')
+      }
+    })
+    .catch(err => console.log(err))
+  }, [])
 
   return (
     <div>
@@ -26,9 +42,8 @@ const User = () => {
 
       {/* User Details */}
       <div>
-        <h2>User Details</h2>
-        <p><strong>Username:</strong> {userDetails.username}</p>
-        <p><strong>Email:</strong> {userDetails.email}</p>
+        <h2>Welcome {name}</h2>
+        
         {/* Display more user details as needed */}
       </div>
     </div>

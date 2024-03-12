@@ -1,48 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; 
-import User from './User'; // Assuming this is the correct import for the User component
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const UserLogin = () => {
+const UserLogin = ({ setUserId }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loginSuccess, setLoginSuccess] = useState(false);
+    const navigate = useNavigate();
+
+    axios.defaults.withCredentials = true;
+
+    useEffect(() => {
+        axios.get('http://localhost:3001/user')
+            .then(res => {
+                if (res.data.valid) {
+                    navigate('/user');
+                } else {
+                    navigate('/user/login')
+                }
+            })
+            .catch(err => console.log(err))
+    }, []);
+
+    useEffect(() => {
+        // Clear input fields when the component mounts
+        setEmail('');
+        setPassword('');
+    }, []); // Empty dependency array ensures this effect runs only once, on mount
 
     const handleSubmit = (e) => {
+
+        e.preventDefault();
         axios.post("http://localhost:3001/user/login", {
             email: email,
             password: password
         })
-        .then((response) => {
-            e.preventDefault()
-            setEmail('');
-            setPassword('');
-            alert("Login Successful")
-            setLoginSuccess(true);
-            console.log(response.data);
-        })
-        .catch((error) => {
-            alert("Invalid Credentials")
-            console.error("Error Logging:", error);
-        });
-    };
+            .then((response) => {
+                setEmail('');
+                setPassword('');
+                alert("Login Successful");
+                setLoginSuccess(true);
+                //setUserId(response.data._id ? response.data._id.toString() : ''); // Set userId from the server response
+                console.log("User ID:", response.data._id);
+                if (response.data.Login) {
+                    navigate('/user');
+                }
 
-    if (loginSuccess) {
-        return <User />;
-    }
+            })
+            .catch((error) => {
+                alert("Invalid Credentials")
+                console.error("Error Logging:", error);
+            });
+    };
 
     return (
         <div>
             <h2>User Login</h2>
-            <div>
-                <label>Email:</label>
-                <input type="text" value={email} onChange={(e) => setEmail(e.target.value)}/>
-            </div>
-            <div>
-                <label>Password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <button onClick={handleSubmit}>Login</button>
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label>Email:</label>
+                    <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off"/>
+                </div>
+                <div>
+                    <label>Password</label>
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off"/>
+                </div>
+                <button type="submit">Login</button>
+            </form>
             <p>Don't have an account? <Link to="/user/register">Register here</Link></p>
         </div>
     )

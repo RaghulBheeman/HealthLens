@@ -2,10 +2,29 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const session = require('express-session');
+const bodyParser = require('body-parser')
+
+router.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure:false,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours (in milliseconds)
+  }
+}));
+
+
+
 
 const cors = require('cors');
 
-router.use(cors())
+router.use(cors({
+    origin: 'http://localhost:3000', // Allow requests from this origin
+    method:["POST" , "GET"],
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+}))
 
 const userSchema = mongoose.Schema({
     userName:{type:String , required:true, minlength:3},
@@ -18,8 +37,14 @@ const User = mongoose.model('User' , userSchema);
 
 //Get users
 router.get('/user', async (req,res)=>{
-    let users = await User.find();
-    res.send(users);
+    // let users = await User.find();
+    // res.send(users);
+    if(req.session.userName){
+        return res.json({valid:true , userName: req.session.userName})
+    }else{
+        return res.json({valid:false})
+    }
+
 });
 
 //register user
@@ -52,11 +77,17 @@ router.post('/user/login', async (req, res) => {
         try {
             const user = await User.findOne({ email, password });
             if (!user) {
-                return res.status(401).send("Invalid email or password");
+                return res.status(401).send("Invalid email or password").json({Login:false});
+
             }
             // Store user ID in session
-            req.session.userId = user._id;
-            res.status(200).send("Login successful");
+            req.session.userId = user.id;
+            req.session.userName = user.userName;
+
+            console.log(req.session)
+            // console.log(req.session.userName)
+            //res.status(200).send(user);
+            return res.json({Login:true , userId:req.session.userId}).status(200)
         } catch (error) {
             console.error("Error:", error);
             res.status(500).send("Internal Server Error");
@@ -100,17 +131,24 @@ router.delete('/user/delete/:id', async (req, res) => {
 
 
 //user logout
-router.post('/user/logout/:id', (req, res) => {
+router.post('/user/logout', (req, res) => {
     // Check if there is a user session and if the IDs match
-    if (req.session && req.session.userId && req.session.userId === req.params.id) {
-        req.session.destroy((err) => {
-            if (err) {
-                console.error("Error destroying session:", err);
-                res.status(500).send("Internal Server Error");
-            } else {
-                res.status(200).send("Logout successful");
-            }
-        });
+    
+    if (req.session && req.session.userId) {
+        console.log("Session Data:", req.session);
+        // req.session.destroy((err) => {
+        //     if (err) {
+        //         console.error("Error destroying session:", err);
+        //         res.status(500).send("Internal Server Error");
+        //     } else {
+        //         res.clearCookie('connect.sid');
+        //         res.status(200).send("Logout successful");
+        //     }
+        // });
+        delete req.session.userId;
+        delete req.session.userName;
+        console.log(req.session);
+        res.status(200).send("Logout successful");
     } else {
         // If there is no user session or the IDs don't match, send an error response
         res.status(401).send("You are not authorized to log out");

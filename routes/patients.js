@@ -1,12 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const Joi = require('joi');
-const multer = require('multer');
 const mongoose = require('mongoose');
+const Joi = require('joi');
+const session = require('express-session');
+const bodyParser = require('body-parser')
+
+router.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure:false,
+      maxAge: 24 * 60 * 60 * 1000 
+  }
+}));
 
 const cors = require('cors');
 
-router.use(cors());
+router.use(cors({
+    origin: 'http://localhost:3000', // Allow requests from this origin
+    method:["POST" , "GET"],
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+}))
 
 const patientSchema = mongoose.Schema({
     userName: { type: String, required: true, minlength: 3 },
@@ -25,6 +40,7 @@ router.post('/patient/register', async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
     
     try {
+        
         const patient = new Patient({
             userName: req.body.userName,
             email: req.body.email,
@@ -46,8 +62,14 @@ router.post('/patient/login', async (req, res) => {
         const patient = await Patient.findOne({ userName, email });
         if (!patient) return res.status(401).send("Invalid email or password");
 
-        req.session.patientId = patient._id; // Store patient ID in session
-        res.status(200).send("Login successful");
+        req.session.cookie.patientId = patient._id; // Store patient ID in session
+        req.session.cookie.patientName = patient.userName;
+
+        // console.log("id",req.session.patientId)
+        // console.log(req.session.patientName)
+        console.log(req.session)
+            
+        return res.json({Login:true , patientId:req.session.patientId}).status(200)
     } catch (error) {
         console.error("Error:", error);
         res.status(500).send("Internal Server Error");
@@ -55,21 +77,24 @@ router.post('/patient/login', async (req, res) => {
 });
 
 router.post('/patient/logout', (req, res) => {
-    const { patientId } = req.body;
-    const loggedInPatientId = req.session.patientId;
-    if (!loggedInPatientId || loggedInPatientId !== patientId) {
-        return res.status(401).send("You are not authorized to log out");
+    if (req.session && req.session.userId) {
+        // req.session.destroy((err) => {
+        //     if (err) {
+        //         console.error("Error destroying session:", err);
+        //         res.status(500).send("Internal Server Error");
+        //     } else {
+        //         res.clearCookie('connect.sid');
+        //         res.status(200).send("Logout successful");
+        //     }
+        // });
+        console.log(req.session)
+        delete req.session.cookie.patientId;
+        console.log(req.session)
+        res.status(200).send("Logout successful");
+    } else {
+        // If there is no user session or the IDs don't match, send an error response
+        res.status(401).send("You are not authorized to log out");
     }
-
-    // Destroy session
-    req.session.destroy((err) => {
-        if (err) {
-            console.error("Error destroying session:", err);
-            res.status(500).send("Failed to logout");
-        } else {
-            res.status(200).send("Logout successful");
-        }
-    });
 });
 
 
