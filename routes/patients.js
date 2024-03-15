@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Joi = require('joi');
 const session = require('express-session');
 const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser')
 
 router.use(session({
     secret: 'secret',
@@ -22,6 +23,10 @@ router.use(cors({
     method:["POST" , "GET"],
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }))
+
+router.use(express.json());
+router.use(cookieParser());
+router.use(bodyParser.json());
 
 const patientSchema = mongoose.Schema({
     userName: { type: String, required: true, minlength: 3 },
@@ -62,11 +67,9 @@ router.post('/patient/login', async (req, res) => {
         const patient = await Patient.findOne({ userName, email });
         if (!patient) return res.status(401).send("Invalid email or password");
 
-        req.session.cookie.patientId = patient._id; // Store patient ID in session
-        req.session.cookie.patientName = patient.userName;
+        req.session.patientId = patient.id; 
+        req.session.patientName = patient.userName;
 
-        // console.log("id",req.session.patientId)
-        // console.log(req.session.patientName)
         console.log(req.session)
             
         return res.json({Login:true , patientId:req.session.patientId}).status(200)
@@ -76,23 +79,16 @@ router.post('/patient/login', async (req, res) => {
     }
 });
 
-router.post('/patient/logout', (req, res) => {
+router.post('/patient/logout', async(req, res) => {
+    console.log(req.session)
     if (req.session && req.session.userId) {
-        // req.session.destroy((err) => {
-        //     if (err) {
-        //         console.error("Error destroying session:", err);
-        //         res.status(500).send("Internal Server Error");
-        //     } else {
-        //         res.clearCookie('connect.sid');
-        //         res.status(200).send("Logout successful");
-        //     }
-        // });
-        console.log(req.session)
-        delete req.session.cookie.patientId;
-        console.log(req.session)
+        delete req.session.patientId;
+        delete req.session.patientName;
+        console.log("after",req.session)
         res.status(200).send("Logout successful");
     } else {
         // If there is no user session or the IDs don't match, send an error response
+        console.log("yes am a patient")
         res.status(401).send("You are not authorized to log out");
     }
 });

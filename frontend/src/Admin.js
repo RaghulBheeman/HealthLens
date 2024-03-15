@@ -1,44 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom';
 
 const Admin = () => {
-  const [adminData, setAdminData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // Track loading state
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchAdminDetails = async () => {
-      setIsLoading(true); // Set loading state to true
-      try {
-        const response = await axios.get('http://localhost:3001/admin/details', {
-          withCredentials: true, // Include credentials if required
-        });
-        setAdminData(response.data);
-        setError(null); // Reset error if successful
-      } catch (error) {
-        console.error('Error fetching admin details:', error);
-        setError('Failed to fetch admin details'); // Set user-friendly error message
-      } finally {
-        setIsLoading(false); // Set loading state to false regardless of success or error
+  const [name , setName] = useState('')
+  const navigate = useNavigate()
+  axios.defaults.withCredentials = true;
+  useEffect(()=> {
+    axios.get('http://localhost:3001/admin')
+    .then( res => {
+      console.log(res.data)
+      if(res.data.valid){
+        console.log("bbb")
+        setName(res.data.adminName);
+      }else{
+        navigate('/admin/login')
       }
-    };
+    })
+    .catch(err => console.log(err))
+  }, [])
 
-    fetchAdminDetails();
-  }, []);
 
   return (
     <div>
-      <h2>Admin Details</h2>
-      {isLoading && <p>Loading...</p>}
-      {error && <p>Error: {error}</p>}
-      {adminData && (
-        <div>
-          <p>ID: {adminData._id}</p>
-          <p>Username: {adminData.userName}</p>
-          <p>Email: {adminData.email}</p>
-          {/* Display other admin details as needed */}
-        </div>
-      )}
+      {/* Navbar */}
+      <nav>
+        <ul>
+          <li>
+            <Link to="/admin/users">Doctors</Link> 
+          </li>
+          <li>
+            <Link to="/admin/logout">Logout</Link> 
+          </li>
+          {/* Add more navbar links as needed */}
+        </ul>
+      </nav>
+
+      {/* User Details */}
+      <div>
+        <h2>Welcome {name}</h2>
+        
+        {/* Display more user details as needed */}
+      </div>
     </div>
   );
 };

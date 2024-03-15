@@ -1,17 +1,35 @@
 const express = require('express');
 const router = express.Router();
-const app = express()
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const session = require('express-session');
+const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser')
+
+const Doctors = require('./users')
+
+router.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure:false,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours (in milliseconds)
+  }
+}));
+
+
 const cors = require('cors');
 
 router.use(cors({
-  origin: 'http://localhost:3000', // Allow requests from this origin
-  credentials: true // Allow credentials (cookies, authorization headers, etc.)
-}));
+    origin: 'http://localhost:3000', // Allow requests from this origin
+    method:["POST" , "GET"],
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+}))
 
-//router.use(cors())
-
+router.use(express.json());
+router.use(cookieParser());
+router.use(bodyParser.json());
 
 const adminSchema = mongoose.Schema({
     userName:{type:String , required:true, minlength:3},
@@ -23,27 +41,16 @@ const adminSchema = mongoose.Schema({
 const Admin = mongoose.model('Admin', adminSchema);
 
 
-// get admin details
-router.get('/admin/details', async (req, res) => {
-    try {
-        const adminId = req.session.adminId; // Retrieve admin ID from session
-        const admin = await Admin.findById(adminId);
-        if (!admin) {
-            return res.status(404).send("Admin not found");
-        }
-        res.status(200).json(admin);
-    } catch (error) {
-        console.error("Error fetching admin details:", error);
-        res.status(500).send("Internal Server Error");
+// get admin 
+router.get('/admin', async (req, res) => {
+    console.log("the name is",req.session.adminName)
+    if(req.session.adminName){
+        
+        return res.json({valid:true , adminName: req.session.adminName})
+    }else{
+        return res.json({valid:false})
     }
 });
-
-//get admins
-router.get('/admin', async (req,res)=>{
-    const admins = await Admin.find();
-    res.send(admins);
-})
-
 //admins registration
 router.post('/admin/register',async (req,res)=>{
     const {error} = validateUserRegisterData(req.body);
@@ -74,8 +81,12 @@ router.post('/admin/login', async (req, res) => {
                 return res.status(401).send("Invalid email or password");
             }
             // Store user ID in session
-            req.session.adminId = admin._id;
-            res.status(200).send("Login successful");
+            req.session.adminId = admin.id;
+            req.session.adminName = admin.userName;
+
+            console.log(req.session)
+
+            return res.json({Login:true , adminId:req.session.adminId}).status(200)
         } catch (error) {
             console.error("Error:", error);
             res.status(500).send("Internal Server Error");
@@ -83,6 +94,30 @@ router.post('/admin/login', async (req, res) => {
     }
    
 });
+
+
+
+
+
+
+
+//get doctors
+router.get('/admin/doctors', async (req,res)=>{
+
+    console.log("Hiiiiii")
+    console.log(req.session)
+    if (req.session && req.session.adminId) {
+        
+        const doctors = await Doctors.find();
+        doctors.forEach(doctor => {
+            console.log(doctor.userName)
+        });
+        res.send(doctors).status(200);
+    }else {
+        res.status(401).send("You are not authorized ");
+    }
+   
+})
 
 // Update user
 router.put('/admin/update/:id', async (req, res) => {
@@ -119,16 +154,15 @@ router.delete('/admin/delete/:id', async (req, res) => {
 
 
 // Admin logout
-router.post('/admin/logout/:id', (req, res) => {
-    if (req.session && req.session.adminId && req.session.adminId === req.params.id) {
-        req.session.destroy((err) => {
-            if (err) {
-                console.error("Error destroying session:", err);
-                res.status(500).send("Internal Server Error");
-            } else {
-                res.status(200).send("Logout successful");
-            }
-        });
+router.post('/admin/logout', (req, res) => {
+    // Check if there is a user session and if the IDs match
+    if (req.session && req.session.adminId) {
+
+        console.log("before:", req.session);
+        delete req.session.adminId;
+        delete req.session.adminName;
+        console.log("after:",req.session);
+        res.status(200).send("Logout successful");
     } else {
         res.status(401).send("You are not authorized to log out");
     }

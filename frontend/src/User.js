@@ -3,12 +3,7 @@ import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'; // Import Link from react-router-dom to create links
 
 const User = () => {
-  // Assuming user details are received as props
-  // const userDetails = {
-  //   username: 'John Doe',
-  //   email: 'john@example.com'
-  //   // Add more details as needed
-  // };
+ 
 
   const [name , setName] = useState('')
   const navigate = useNavigate()

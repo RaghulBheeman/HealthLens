@@ -4,32 +4,25 @@ import { useNavigate } from 'react-router-dom';
 
 const UploadPdf = () => {
   const [file, setFile] = useState(null);
-  const [patientEmail, setPatientEmail] = useState('');
-  const [username, setUsername] = useState('');
+  //const [username, setUsername] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  const handlePatientEmailChange = (e) => {
-    setPatientEmail(e.target.value);
-  };
-
-  const handleUsernameChange = (e) => {
-    setUsername(e.target.value);
-  };
+  // const handleUsernameChange = (e) => {
+  //   setUsername(e.target.value);
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const formData = new FormData();
     formData.append('pdfFile', file);
-    formData.append('email', patientEmail);
-    formData.append('username', username);
+    //formData.append('username', username);
 
     try {
       const response = await axios.post('http://localhost:3001/patient/upload', formData, {
@@ -49,31 +42,22 @@ const UploadPdf = () => {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (e) => {
+    e.preventDefault();
     try {
-      navigate('/patient/Logout');
+      await axios.post('http://localhost:3001/patient/logout');
+      navigate('/patient/logout');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
-
 
   return (
     <div>
       <h2>Upload Medical Report</h2>
       <button onClick={handleLogout}>Logout</button>
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="patientEmail">Patient Email:</label>
-          <input
-            type="email"
-            id="patientEmail"
-            value={patientEmail}
-            onChange={handlePatientEmailChange}
-            required
-          />
-        </div>
-        <div>
+        {/* <div>
           <label htmlFor="username">Username:</label>
           <input
             type="text"
@@ -82,7 +66,7 @@ const UploadPdf = () => {
             onChange={handleUsernameChange}
             required
           />
-        </div>
+        </div> */}
         <div>
           <label htmlFor="pdfFile">Select PDF File:</label>
           <input

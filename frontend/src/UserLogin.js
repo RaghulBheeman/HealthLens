@@ -23,12 +23,6 @@ const UserLogin = ({ setUserId }) => {
             .catch(err => console.log(err))
     }, []);
 
-    useEffect(() => {
-        // Clear input fields when the component mounts
-        setEmail('');
-        setPassword('');
-    }, []); // Empty dependency array ensures this effect runs only once, on mount
-
     const handleSubmit = (e) => {
 
         e.preventDefault();
@@ -37,6 +31,7 @@ const UserLogin = ({ setUserId }) => {
             password: password
         })
             .then((response) => {
+                console.log(response.data)
                 setEmail('');
                 setPassword('');
                 alert("Login Successful");

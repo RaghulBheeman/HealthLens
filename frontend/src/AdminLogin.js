@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom'; 
 import Admin from './Admin';
 
+
 const AdminLogin = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -11,11 +12,12 @@ const AdminLogin = () => {
 
     const handleSubmit = (e) => {
       axios.post("http://localhost:3001/admin/login", {
-        
           email: email,
           password: password
       })
       .then((response) => {
+
+         console.log(response.data)
           e.preventDefault()
           setEmail('');
           setPassword('');
@@ -49,7 +51,9 @@ const AdminLogin = () => {
       </div>
       <button onClick={handleSubmit}>Login</button>
       <p>Don't have an account? <Link to="/admin/register">Register here</Link></p>
+      
     </div>
+    
   );
 }
 
